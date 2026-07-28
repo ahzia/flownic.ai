@@ -46,4 +46,19 @@ Also run guest practice migrations on the linked Supabase project (see `docs/run
 
 ## If install fails on Vercel
 
+### `ERR_PNPM_IGNORED_BUILDS` (esbuild / sharp / unrs-resolver)
+
+pnpm 11 requires explicit approvals in [`pnpm-workspace.yaml`](../../pnpm-workspace.yaml):
+
+```yaml
+allowBuilds:
+  esbuild: true
+  sharp: true
+  unrs-resolver: true
+```
+
+Placeholder values like `set this to true or false` cause install to exit 1. After changing approvals, commit and redeploy.
+
+### Other install/build failures
+
 Copy the log from the first `Error:` / `ELIFECYCLE` line onward. Local `pnpm build` passing usually means env/Node/install mismatch, not TypeScript.
