@@ -1,0 +1,38 @@
+---
+description: Definition of done, tests required, and AI-coding anti-patterns
+globs: src/**,tests/**,supabase/**
+alwaysApply: false
+---
+
+# Definition of done
+
+A work package is complete only when applicable items from technical guide §36 pass.
+
+## Required for behavior changes
+
+- Happy path plus empty/loading/error/timeout/cancel/reconnect/retry states
+- Auth and object-level authorization tests
+- Role-privacy tests where session payloads are involved (two-browser Playwright when applicable)
+- Analytics/product events without sensitive properties
+- Migrations understood; types regenerated
+- Provider calls bounded; no new overlapping dependencies without justification
+
+## Commands (when app exists)
+
+`pnpm check`, `pnpm test`, relevant `pnpm test:e2e` / `pnpm test:db`
+
+Use `playwright-cli` for browser E2E work.
+
+## Reject these changes
+
+- Second `User`/`Session`/`Exam` model instead of the domain model
+- Privileged Supabase queries in client components
+- Fetch full blueprint and hide examiner fields with CSS
+- Provider presence as session-completion truth
+- Unawaited serverless promise as the only background job mechanism
+- Hardcoded model names across feature files
+- Full prompts/transcripts in error logs
+- Editing a production migration in place
+- “Done” without failure-state and authorization tests
+- Large unrelated refactors or TODO placeholders without owner
+- Polished UI while required product events are missing

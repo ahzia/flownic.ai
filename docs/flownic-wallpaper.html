@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Flownic Wallpaper</title>
+  <!--
+    Edit this file, then re-export:
+      npm run wallpaper
+    Or manually (from repo root):
+      "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
+        --headless --disable-gpu --hide-scrollbars \
+        --window-size=2560,1440 \
+        --screenshot=wallpaper/flownic-wallpaper.png \
+        "file://$(pwd)/wallpaper/flownic-wallpaper.html"
+      sips -s format jpeg -s formatOptions 90 wallpaper/flownic-wallpaper.png --out wallpaper/flownic-wallpaper.jpg
+  -->
+  <style>
+    :root {
+      --bg-deep: #070b16;
+      --bg-mid: #0f172a;
+      --accent-a: #667eea;
+      --accent-b: #764ba2;
+      --accent-c: #4facfe;
+      --accent-d: #f093fb;
+      --wordmark: #f8fafc;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    html,
+    body {
+      width: 2560px;
+      height: 1440px;
+      overflow: hidden;
+      background: var(--bg-deep);
+      font-family: "Segoe UI", "Avenir Next", "Helvetica Neue", sans-serif;
+    }
+
+    .stage {
+      position: relative;
+      width: 2560px;
+      height: 1440px;
+      background:
+        radial-gradient(ellipse 90% 70% at 50% 42%, #152038 0%, transparent 58%),
+        radial-gradient(ellipse 55% 45% at 18% 78%, rgba(102, 126, 234, 0.18) 0%, transparent 55%),
+        radial-gradient(ellipse 50% 40% at 82% 22%, rgba(79, 172, 254, 0.16) 0%, transparent 50%),
+        radial-gradient(ellipse 40% 35% at 75% 85%, rgba(240, 147, 251, 0.1) 0%, transparent 50%),
+        linear-gradient(165deg, #0a1224 0%, var(--bg-mid) 45%, #070b16 100%);
+    }
+
+    /* Soft flow ribbons — browser/workflow motion, no text */
+    .ribbon {
+      position: absolute;
+      border-radius: 999px;
+      filter: blur(1px);
+      opacity: 0.55;
+      pointer-events: none;
+    }
+
+    .ribbon-1 {
+      width: 1400px;
+      height: 2px;
+      top: 38%;
+      left: -8%;
+      background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(102, 126, 234, 0.55) 25%,
+        rgba(79, 172, 254, 0.45) 55%,
+        transparent 100%
+      );
+      transform: rotate(-8deg);
+      box-shadow: 0 0 40px 2px rgba(102, 126, 234, 0.25);
+    }
+
+    .ribbon-2 {
+      width: 1200px;
+      height: 2px;
+      top: 58%;
+      right: -6%;
+      background: linear-gradient(
+        90deg,
+        transparent 0%,
+        rgba(240, 147, 251, 0.35) 30%,
+        rgba(118, 75, 162, 0.4) 60%,
+        transparent 100%
+      );
+      transform: rotate(6deg);
+      box-shadow: 0 0 36px 2px rgba(240, 147, 251, 0.18);
+    }
+
+    .ribbon-3 {
+      width: 900px;
+      height: 1px;
+      top: 48%;
+      left: 20%;
+      background: linear-gradient(
+        90deg,
+        transparent,
+        rgba(79, 172, 254, 0.35),
+        transparent
+      );
+      transform: rotate(-2deg);
+    }
+
+    /* Node dots along the flow paths */
+    .nodes {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .node {
+      position: absolute;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: rgba(148, 163, 184, 0.35);
+      box-shadow: 0 0 18px rgba(102, 126, 234, 0.35);
+    }
+
+    .node.lit {
+      background: rgba(79, 172, 254, 0.75);
+      box-shadow: 0 0 22px rgba(79, 172, 254, 0.55);
+    }
+
+    .node.n1 { top: 36.5%; left: 18%; }
+    .node.n2 { top: 34.5%; left: 32%; width: 8px; height: 8px; }
+    .node.n3 { top: 39%; left: 48%; }
+    .node.n4 { top: 42%; left: 62%; width: 7px; height: 7px; }
+    .node.n5 { top: 56%; left: 72%; }
+    .node.n6 { top: 60%; left: 58%; width: 8px; height: 8px; }
+    .node.n7 { top: 55%; left: 42%; }
+    .node.n8 { top: 61%; left: 28%; width: 7px; height: 7px; }
+
+    /* Very subtle grid */
+    .grid {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(148, 163, 184, 0.035) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(148, 163, 184, 0.035) 1px, transparent 1px);
+      background-size: 80px 80px;
+      mask-image: radial-gradient(ellipse 70% 60% at 50% 45%, black 20%, transparent 75%);
+      -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 45%, black 20%, transparent 75%);
+      pointer-events: none;
+    }
+
+    /* Soft vignette */
+    .vignette {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(
+        ellipse 75% 65% at 50% 45%,
+        transparent 40%,
+        rgba(7, 11, 22, 0.55) 100%
+      );
+      pointer-events: none;
+    }
+
+    /* Center brand lockup */
+    .brand {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 72px;
+      z-index: 2;
+    }
+
+    .mark-wrap {
+      width: 360px;
+      height: 360px;
+      display: grid;
+      place-items: center;
+      border-radius: 80px;
+      background: rgba(15, 23, 42, 0.55);
+      border: 1px solid rgba(148, 163, 184, 0.14);
+      box-shadow:
+        0 0 0 1px rgba(102, 126, 234, 0.08),
+        0 40px 120px rgba(0, 0, 0, 0.45),
+        0 0 120px rgba(102, 126, 234, 0.28);
+      backdrop-filter: blur(8px);
+    }
+
+    .mark {
+      width: 220px;
+      height: 220px;
+      stroke-width: 1.6;
+    }
+
+    .wordmark {
+      color: var(--wordmark);
+      font-size: 220px;
+      font-weight: 700;
+      letter-spacing: -0.045em;
+      line-height: 1;
+      text-shadow: 0 16px 64px rgba(0, 0, 0, 0.5);
+    }
+
+    .wordmark .dot {
+      background: linear-gradient(
+        135deg,
+        var(--accent-a) 0%,
+        var(--accent-b) 35%,
+        var(--accent-d) 70%,
+        var(--accent-c) 100%
+      );
+      -webkit-background-clip: text;
+      background-clip: text;
+      color: transparent;
+    }
+
+    /* Glow behind brand */
+    .brand-glow {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      width: 1400px;
+      height: 1400px;
+      transform: translate(-50%, -52%);
+      border-radius: 50%;
+      background: radial-gradient(
+        circle,
+        rgba(102, 126, 234, 0.3) 0%,
+        rgba(79, 172, 254, 0.14) 35%,
+        transparent 68%
+      );
+      pointer-events: none;
+      z-index: 1;
+    }
+  </style>
+</head>
+<body>
+  <div class="stage">
+    <div class="grid"></div>
+    <div class="ribbon ribbon-1"></div>
+    <div class="ribbon ribbon-2"></div>
+    <div class="ribbon ribbon-3"></div>
+    <div class="nodes">
+      <span class="node lit n1"></span>
+      <span class="node n2"></span>
+      <span class="node lit n3"></span>
+      <span class="node n4"></span>
+      <span class="node lit n5"></span>
+      <span class="node n6"></span>
+      <span class="node lit n7"></span>
+      <span class="node n8"></span>
+    </div>
+    <div class="brand-glow"></div>
+    <div class="brand">
+      <div class="mark-wrap">
+        <!-- Inline Flownic sparkles mark (from public/flownic-logo.svg) -->
+        <svg class="mark" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <defs>
+            <linearGradient id="sparkles-color" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" style="stop-color:#667eea;stop-opacity:1" />
+              <stop offset="30%" style="stop-color:#764ba2;stop-opacity:1" />
+              <stop offset="60%" style="stop-color:#f093fb;stop-opacity:1" />
+              <stop offset="100%" style="stop-color:#4facfe;stop-opacity:1" />
+            </linearGradient>
+          </defs>
+          <path d="m12 3-1.912 5.813a2 2 0 0 1-1.275 1.275L3 12l5.813 1.912a2 2 0 0 1 1.275 1.275L12 21l1.912-5.813a2 2 0 0 1 1.275-1.275L21 12l-5.813-1.912a2 2 0 0 1-1.275-1.275L12 3Z" stroke="url(#sparkles-color)"/>
+          <path d="M5 3v4" stroke="url(#sparkles-color)"/>
+          <path d="M19 17v4" stroke="url(#sparkles-color)"/>
+          <path d="M3 5h4" stroke="url(#sparkles-color)"/>
+          <path d="M17 19h4" stroke="url(#sparkles-color)"/>
+        </svg>
+      </div>
+      <div class="wordmark">Flownic<span class="dot">.ai</span></div>
+    </div>
+    <div class="vignette"></div>
+  </div>
+</body>
+</html>

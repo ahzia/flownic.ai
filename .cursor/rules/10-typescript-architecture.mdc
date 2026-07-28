@@ -1,0 +1,35 @@
+---
+description: TypeScript architecture boundaries for Flownic domain/server/features
+globs: src/**/*.ts,src/**/*.tsx
+alwaysApply: false
+---
+
+# TypeScript architecture
+
+Canonical layout and contracts: technical guide §7–§8.
+
+## Boundaries
+
+- `src/domain` — pure state, policy, schemas; no React, Supabase client, or provider SDKs
+- `src/server` — secrets, repositories, adapters, privileged commands
+- `src/features` — compose domain into user flows
+- `src/app` — routes/layouts; thin adapters only; call services, do not reimplement rules
+- React components must not query privileged tables directly
+- Provider SDK types must not leak into domain types
+- Generated Supabase types: one generated file; never hand-edit
+
+## Domain terms (do not mix)
+
+`assessment_track`, `blueprint_version`, `practice_slot`, `booking`, `session`,
+`session_participant`, `round`, `stage`, `transcript_segment`, `feedback_report`,
+`product_event`, `domain_event`
+
+Do not use `exam`, `test`, `session`, `match`, and `booking` interchangeably.
+
+## Defaults
+
+- Strict TypeScript; Zod at env, request, blueprint, and AI-output boundaries
+- UUIDs for entities; opaque server-derived provider room names
+- Every external mutation accepts or creates an idempotency key
+- Prefer existing patterns; no overlapping form/validation/date/state/HTTP/UI libs
+- Use `vercel-react-best-practices` and `vercel-composition-patterns` skills for React/Next code

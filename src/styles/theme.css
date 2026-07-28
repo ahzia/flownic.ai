@@ -1,0 +1,128 @@
+/* Flownic design tokens — light + dark. Product UI must use these only. */
+
+:root {
+  color-scheme: light;
+
+  --font-display: var(--font-fraunces), "Times New Roman", serif;
+  --font-sans: var(--font-source-sans), "Segoe UI", sans-serif;
+
+  /* Logo gradient accents (from flownic-logo.svg / brand wallpaper) */
+  --color-brand-violet: #667eea;
+  --color-brand-purple: #764ba2;
+  --color-brand-pink: #f093fb;
+  --color-brand-sky: #4facfe;
+  --gradient-brand: linear-gradient(
+    135deg,
+    var(--color-brand-violet) 0%,
+    var(--color-brand-purple) 32%,
+    var(--color-brand-pink) 62%,
+    var(--color-brand-sky) 100%
+  );
+
+  --color-bg: #f4f6fb;
+  --color-bg-elevated: #e8edf7;
+  --color-surface: #ffffff;
+  --color-surface-muted: #f8fafc;
+  --color-fg: #0f172a;
+  --color-muted: #475569;
+  --color-border: #dbe3f0;
+  --color-border-strong: #94a3b8;
+
+  --color-accent: #0c6b4d;
+  --color-accent-hover: #09553d;
+  --color-accent-fg: #ffffff;
+  --color-accent-soft: #d7f0e4;
+
+  --color-danger: #b42318;
+  --color-danger-soft: #fde8e6;
+  --color-success: #067647;
+  --color-success-soft: #dcfae6;
+  --color-warning: #b54708;
+  --color-warning-soft: #fef0c7;
+
+  --color-examiner: var(--color-brand-violet);
+  --color-examiner-soft: #e8edff;
+  --color-candidate: var(--color-accent);
+  --color-candidate-soft: var(--color-accent-soft);
+
+  --color-overlay: rgb(15 23 42 / 0.45);
+  --shadow-sm: 0 1px 2px rgb(15 23 42 / 0.06);
+  --shadow-md: 0 10px 30px rgb(15 23 42 / 0.08);
+  --radius-sm: 0.5rem;
+  --radius-md: 0.875rem;
+  --radius-lg: 1.25rem;
+  --radius-full: 9999px;
+
+  --motion-fast: 140ms;
+  --motion-base: 220ms;
+  --motion-slow: 360ms;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+
+  --gradient-hero:
+    radial-gradient(900px 420px at 8% -8%, rgb(102 126 234 / 0.14) 0%, transparent 55%),
+    radial-gradient(700px 360px at 100% 0%, rgb(79 172 254 / 0.12) 0%, transparent 50%),
+    radial-gradient(600px 320px at 85% 90%, rgb(240 147 251 / 0.08) 0%, transparent 50%),
+    var(--color-bg);
+}
+
+html.dark {
+  color-scheme: dark;
+
+  --color-bg: #070b16;
+  --color-bg-elevated: #0f172a;
+  --color-surface: #152038;
+  --color-surface-muted: #1a2740;
+  --color-fg: #f8fafc;
+  --color-muted: #94a3b8;
+  --color-border: #243047;
+  --color-border-strong: #3d4f6f;
+
+  --color-accent: #3dba8b;
+  --color-accent-hover: #56d0a1;
+  --color-accent-fg: #062116;
+  --color-accent-soft: #16362a;
+
+  --color-danger: #f97066;
+  --color-danger-soft: #3b1a18;
+  --color-success: #47cd89;
+  --color-success-soft: #143528;
+  --color-warning: #fdb022;
+  --color-warning-soft: #3a2a10;
+
+  --color-examiner: #8ba4ff;
+  --color-examiner-soft: #1a2548;
+  --color-candidate: #3dba8b;
+  --color-candidate-soft: #16362a;
+
+  --color-overlay: rgb(0 0 0 / 0.55);
+  --shadow-sm: 0 1px 2px rgb(0 0 0 / 0.35);
+  --shadow-md: 0 14px 40px rgb(0 0 0 / 0.45);
+
+  --gradient-hero:
+    radial-gradient(900px 420px at 8% -8%, rgb(102 126 234 / 0.2) 0%, transparent 55%),
+    radial-gradient(700px 360px at 100% 0%, rgb(79 172 254 / 0.16) 0%, transparent 50%),
+    radial-gradient(600px 320px at 85% 90%, rgb(240 147 251 / 0.1) 0%, transparent 50%),
+    var(--color-bg);
+}
+
+@theme inline {
+  --color-background: var(--color-bg);
+  --color-foreground: var(--color-fg);
+  --color-surface: var(--color-surface);
+  --color-muted: var(--color-muted);
+  --color-border: var(--color-border);
+  --color-accent: var(--color-accent);
+  --color-accent-fg: var(--color-accent-fg);
+  --color-danger: var(--color-danger);
+  --color-success: var(--color-success);
+  --color-warning: var(--color-warning);
+  --font-sans: var(--font-sans);
+  --font-display: var(--font-display);
+}
+
+.text-brand-gradient {
+  background: var(--gradient-brand);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}

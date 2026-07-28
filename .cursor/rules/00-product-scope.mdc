@@ -1,0 +1,34 @@
+---
+description: Flownic MVP product scope, source hierarchy, and anti-sprawl locks
+alwaysApply: true
+---
+
+# Product scope
+
+Flownic MVP proves one loop: telc B1 candidates book a fixed slot, complete an
+AI-guided reciprocal peer speaking session, get evidence-based practice feedback,
+and rebook. Peer practice is default; AI is examiner-copilot and fallback.
+
+## Source order
+
+1. `docs/02_Flownic_YC_MVP_Business_Plan.md` — product scope
+2. `docs/03_Flownic_YC_MVP_Technical_Requirements_and_Cursor_Implementation_Guide.md` — architecture
+3. `docs/04_Flownic_MVP_Online_Video_Simulation_Technology_Guide.md` — LiveKit media
+4. `docs/01_…MVP_Guardrails…` — long-term vision only
+5. `docs/adr/` + tested code — implementation facts
+
+Read root `AGENTS.md` and use `.agents/skills/` for stack-specific work.
+
+## Hard locks
+
+- One track: `telc-de-b1-speaking`. No second exam, language, or interview track.
+- 18+ only. No official scores, pass guarantees, or telc affiliation claims.
+- Manual matching/ops allowed. Do not build marketplace, SSO, native apps, or social feed.
+- Media = LiveKit Cloud prefabs; product state stays in Flownic/PostgreSQL.
+- Ask founders + write an ADR before changing scope, providers, authz, or retention.
+
+## First work style
+
+One vertical work package per chat. State acceptance criteria and non-goals.
+Inspect existing code before renaming or replacing. Prefer Plan Mode for audits,
+migrations, and multi-file changes.

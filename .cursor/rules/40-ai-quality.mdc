@@ -1,0 +1,30 @@
+---
+description: AI follow-ups, reports, prompts, and model configuration quality gates
+globs: src/server/ai/**,tests/ai-evals/**,content/blueprints/**
+alwaysApply: false
+---
+
+# AI quality
+
+Canonical: technical guide §16–§18.
+
+## Product language
+
+- Practice feedback with evidence and uncertainty — never official scores, pass %, or telc affiliation
+- Cite transcript moments; do not fabricate quotations
+- State engine controls stage order and timers — models may not rewrite the blueprint
+
+## Implementation
+
+- Validate all structured model output with Zod; reject/retry only on safe failures
+- Do not hardcode model names in features — use capability-specific server config
+- Version prompts, models, and blueprint together; record latency, usage, and cost
+- Reports are async jobs (Postgres job table); never rely on an unawaited serverless promise alone
+- Client must not send raw system prompts or arbitrary rubric content
+- Bound retries; do not retry validation, authorization, or content-policy failures
+- Do not store full prompts/transcripts in error logs
+
+## Release gate
+
+Model/prompt changes need the teacher-reviewed eval set — JSON validity alone is not enough.
+Keep AI evals separate from ordinary unit snapshots.

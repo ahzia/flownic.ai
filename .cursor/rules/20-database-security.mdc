@@ -1,0 +1,28 @@
+---
+description: Supabase/Postgres security, RLS, and migration rules
+globs: supabase/**,src/server/db/**,src/server/auth/**
+alwaysApply: false
+---
+
+# Database and security
+
+Follow technical guide §20 and the `supabase` + `supabase-postgres-best-practices` skills.
+
+## Rules
+
+- PostgreSQL is the system of record for bookings, sessions, roles, transcripts, reports, consent, events, and jobs
+- Enable RLS on every exposed table, including tables with no user policy yet
+- Browser clients only access what RLS permits; privileged writes go through server services
+- Schema changes via SQL migrations only; regenerate types after migrations
+- Never change a migration that has reached production — add a new one
+- Preview/local must never point at production DB, LiveKit, email, or payment
+- Do not log secrets, auth headers, magic links, provider tokens, or raw cookies
+- Prefer EU-region Supabase for the MVP
+
+## Data minimization
+
+- 18+ confirmation only — no DOB, passport, nationality, or official exam credentials
+- Do not put transcript text, emails, names, tokens, or hidden role content in analytics
+- Deletion is a documented cross-system workflow, not “delete from UI” alone
+
+When reviewing auth/RLS changes, also apply the `security-best-practices` skill.

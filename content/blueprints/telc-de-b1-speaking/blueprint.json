@@ -1,0 +1,110 @@
+{
+  "schemaVersion": 1,
+  "trackSlug": "telc-de-b1-speaking",
+  "version": "0.1.0",
+  "status": "draft",
+  "defaultLocale": "de",
+  "supportedInstructionLocales": ["de", "en"],
+  "supportedFeedbackLocales": ["de", "en"],
+  "roles": [
+    { "key": "examiner", "privateGuidance": true },
+    { "key": "candidate", "privateGuidance": false }
+  ],
+  "rounds": [
+    {
+      "key": "round-1",
+      "roleAssignment": "initial",
+      "stages": ["intro", "task-1", "task-2", "planning"]
+    },
+    {
+      "key": "round-2",
+      "roleAssignment": "swapped",
+      "stages": ["intro", "task-1", "task-2", "planning"]
+    }
+  ],
+  "stages": [
+    {
+      "key": "intro",
+      "durationSeconds": 60,
+      "candidateInstructionKey": "intro.candidate",
+      "examinerInstructionKey": "intro.examiner",
+      "taskVariantIds": []
+    },
+    {
+      "key": "task-1",
+      "durationSeconds": 180,
+      "candidateInstructionKey": "task1.candidate",
+      "examinerInstructionKey": "task1.examiner",
+      "taskVariantIds": ["task1-placeholder-v1"],
+      "followUpPolicy": {
+        "enabled": true,
+        "maxSuggestions": 2,
+        "allowedIntents": ["clarify", "expand", "example"]
+      }
+    },
+    {
+      "key": "task-2",
+      "durationSeconds": 180,
+      "candidateInstructionKey": "task2.candidate",
+      "examinerInstructionKey": "task2.examiner",
+      "taskVariantIds": ["task2-placeholder-v1"],
+      "followUpPolicy": {
+        "enabled": true,
+        "maxSuggestions": 2,
+        "allowedIntents": ["clarify", "expand"]
+      }
+    },
+    {
+      "key": "planning",
+      "durationSeconds": 180,
+      "candidateInstructionKey": "planning.candidate",
+      "examinerInstructionKey": "planning.examiner",
+      "taskVariantIds": ["planning-placeholder-v1"]
+    }
+  ],
+  "instructions": {
+    "intro.candidate": {
+      "de": "Begrüßen Sie Ihren Partner. Stellen Sie sich kurz vor.",
+      "en": "Greet your partner. Introduce yourself briefly."
+    },
+    "intro.examiner": {
+      "de": "Begrüßen Sie den Kandidaten. Starten Sie erst, wenn beide bereit sind. Geben Sie keine Bewertungshinweise.",
+      "en": "Greet the candidate. Start only when both are ready. Do not give evaluation hints."
+    },
+    "task1.candidate": {
+      "de": "PLACEHOLDER — Sprechen Sie über das Thema auf der Aufgabenkarte (Originalinhalt nach Lehrer-Review).",
+      "en": "PLACEHOLDER — Speak about the topic on the task card (original content after teacher review)."
+    },
+    "task1.examiner": {
+      "de": "PLACEHOLDER — Stellen Sie bei Bedarf 1–2 kurze Nachfragen. Zeigen Sie diese Hinweise dem Kandidaten nicht.",
+      "en": "PLACEHOLDER — Ask 1–2 short follow-ups if needed. Never show these cues to the candidate."
+    },
+    "task2.candidate": {
+      "de": "PLACEHOLDER — Bearbeiten Sie die zweite Interaktionsaufgabe (Originalinhalt nach Lehrer-Review).",
+      "en": "PLACEHOLDER — Complete the second interaction task (original content after teacher review)."
+    },
+    "task2.examiner": {
+      "de": "PLACEHOLDER — Führen Sie die Interaktion; halten Sie die Zeit ein; keine Antwortvorgaben.",
+      "en": "PLACEHOLDER — Lead the interaction; keep time; do not supply answers."
+    },
+    "planning.candidate": {
+      "de": "PLACEHOLDER — Planen Sie gemeinsam die nächste Aktivität (Originalinhalt nach Lehrer-Review).",
+      "en": "PLACEHOLDER — Plan the next activity together (original content after teacher review)."
+    },
+    "planning.examiner": {
+      "de": "PLACEHOLDER — Moderieren Sie die gemeinsame Planung ohne die Lösung vorzugeben.",
+      "en": "PLACEHOLDER — Moderate joint planning without giving the solution."
+    }
+  },
+  "rubric": {
+    "version": "b1-practice-v1",
+    "dimensions": [
+      "task_completion",
+      "fluency",
+      "grammar",
+      "vocabulary",
+      "interaction"
+    ]
+  },
+  "disclaimer": "Flownic practice only. Not affiliated with telc gGmbH. Feedback is a practice estimate with evidence and uncertainty — not an official score or pass prediction."
+}

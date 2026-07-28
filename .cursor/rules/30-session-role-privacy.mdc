@@ -1,0 +1,32 @@
+---
+description: Live session role privacy, media boundaries, and stage sync
+globs: src/features/live-session/**,src/domain/session/**,src/domain/blueprint/**,src/server/livekit/**,src/server/services/**session**,src/app/**/session/**,src/app/api/**/session/**
+alwaysApply: false
+---
+
+# Session role privacy and media
+
+Canonical: technical guide §11–§12 and video guide (LiveKit).
+
+## Role privacy
+
+- Server-authoritative: examiner-only content must never reach the candidate browser
+- Filter in API/RSC payloads — CSS/UI hiding alone does **not** pass
+- Candidate HTML, JSON, prefetch, logs, and analytics must exclude examiner guidance, follow-ups, rubric anchors, and future task answers
+- After role switch, previous examiner content must not remain authorized on the old client
+- Use LiveKit for media transport only; Flownic owns roles, timers, stages, completion
+
+## Media
+
+- Prefer LiveKit Cloud React prefabs (`PreJoin`, conference); avoid custom WebRTC
+- Short-lived, room-scoped, server-issued tokens after auth + membership + join-window checks
+- Opaque room names; never user names/emails
+- Verify webhooks; make handlers idempotent
+- Recording off by default; explicit consent if enabled
+- Use the `livekit-agents` skill for LiveKit agent/realtime work
+
+## Resilience
+
+- Peer call survives AI/transcription failure
+- Provider room end ≠ session complete
+- Timer UI derives from server timestamps; do not write DB every second
