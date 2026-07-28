@@ -20,7 +20,10 @@ export async function POST(request: Request) {
     const parsed = bodySchema.safeParse(json);
     if (!parsed.success) {
       return NextResponse.json(
-        { ok: false, error: "Invalid request. Confirm you are 18+ and choose a mode." },
+        {
+          ok: false,
+          error: "Invalid request. Confirm you are 18+ and choose a mode.",
+        },
         { status: 400 },
       );
     }
@@ -30,14 +33,17 @@ export async function POST(request: Request) {
       GUEST_KEY_COOKIE,
     );
     const guestKey = existingKey ?? randomUUID();
-    const { view } = createPracticeSession({
+    const { view } = await createPracticeSession({
       mode: parsed.data.mode,
       hostGuestKey: guestKey,
       hostDisplayName: parsed.data.displayName,
     });
 
     const response = NextResponse.json({ ok: true, view });
-    for (const cookie of guestCookieHeaders(guestKey, parsed.data.displayName)) {
+    for (const cookie of guestCookieHeaders(
+      guestKey,
+      parsed.data.displayName,
+    )) {
       response.headers.append("Set-Cookie", cookie);
     }
     return response;
@@ -45,7 +51,8 @@ export async function POST(request: Request) {
     return NextResponse.json(
       {
         ok: false,
-        error: error instanceof Error ? error.message : "Could not create session",
+        error:
+          error instanceof Error ? error.message : "Could not create session",
       },
       { status: 500 },
     );

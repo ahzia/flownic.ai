@@ -9,39 +9,60 @@ import {
   type PracticeSessionRecord,
   type RolePrivateView,
 } from "@/domain/session/state";
-import { hasLiveKitConfig } from "@/shared/env";
-
-type GlobalStore = {
-  sessionsById: Map<string, PracticeSessionRecord>;
-  sessionsByInvite: Map<string, string>;
-};
-
-const globalForStore = globalThis as typeof globalThis & {
-  __flownicPracticeStore?: GlobalStore;
-};
-
-function store(): GlobalStore {
-  if (!globalForStore.__flownicPracticeStore) {
-    globalForStore.__flownicPracticeStore = {
-      sessionsById: new Map(),
-      sessionsByInvite: new Map(),
-    };
-  }
-  return globalForStore.__flownicPracticeStore;
-}
+import {
+  findGuestPracticeSessionById,
+  findGuestPracticeSessionByInvite,
+  insertGuestPracticeSession,
+  isGuestPracticeDbConfigured,
+  updateGuestPracticeSession,
+} from "@/server/db/guest-practice";
+import { getFeatureFlags, hasLiveKitConfig } from "@/shared/env";
 
 function opaqueToken(): string {
   return randomUUID().replace(/-/g, "");
 }
 
-export function createPracticeSession(input: {
+function mediaOptions() {
+  const flags = getFeatureFlags();
+  return {
+    mediaReady: hasLiveKitConfig(),
+    videoEnabled: flags.videoEnabled,
+  };
+}
+
+function toView(
+  session: PracticeSessionRecord,
+  guestKey: string,
+  includeInviteToken: boolean,
+): RolePrivateView {
+  const blueprint = loadBlueprintFromDisk();
+  const view = buildRolePrivateView({
+    session,
+    blueprint,
+    guestKey,
+    includeInviteToken,
+    ...mediaOptions(),
+  });
+  if (!view) throw new Error("Not a participant");
+  return view;
+}
+
+export async function createPracticeSession(input: {
   mode: SessionMode;
   hostGuestKey: string;
   hostDisplayName: string;
   hostRole?: SessionRole;
-}): { session: PracticeSessionRecord; view: RolePrivateView } {
+}): Promise<{ session: PracticeSessionRecord; view: RolePrivateView }> {
+  if (!isGuestPracticeDbConfigured()) {
+    throw new Error(
+      "Supabase is required for reliable peer practice. Set NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY, and SUPABASE_SECRET_KEY, then run the guest_practice_sessions migration (see docs/runbooks/supabase-guest-practice.md).",
+    );
+  }
+
   const blueprint = loadBlueprintFromDisk();
-  const hostRole = input.hostRole ?? (input.mode === "ai_examiner" ? "candidate" : "examiner");
+  const hostRole =
+    input.hostRole ??
+    (input.mode === "ai_examiner" ? "candidate" : "examiner");
   const firstStage = getStageKey(blueprint, 0, 0);
   const timing = firstStage
     ? startStageTiming(blueprint, firstStage)
@@ -80,47 +101,36 @@ export function createPracticeSession(input: {
     });
   }
 
-  const s = store();
-  s.sessionsById.set(session.id, session);
-  s.sessionsByInvite.set(session.inviteToken, session.id);
+  await insertGuestPracticeSession(session);
 
-  const view = buildRolePrivateView({
+  return {
     session,
-    blueprint,
-    guestKey: input.hostGuestKey,
-    includeInviteToken: input.mode === "peer",
-    mediaReady: hasLiveKitConfig(),
-  });
-  if (!view) throw new Error("Failed to build host view");
-  return { session, view };
+    view: toView(session, input.hostGuestKey, input.mode === "peer"),
+  };
 }
 
-export function joinPracticeSession(input: {
+export async function joinPracticeSession(input: {
   inviteToken: string;
   guestKey: string;
   displayName: string;
-}): { session: PracticeSessionRecord; view: RolePrivateView } {
-  const s = store();
-  const sessionId = s.sessionsByInvite.get(input.inviteToken);
-  if (!sessionId) throw new Error("Invite not found");
-  const session = s.sessionsById.get(sessionId);
-  if (!session) throw new Error("Session not found");
-  if (session.mode !== "peer") throw new Error("This session is not peer inviteable");
-
-  const existing = session.participants.find((p) => p.guestKey === input.guestKey);
-  if (existing) {
-    const blueprint = loadBlueprintFromDisk();
-    const view = buildRolePrivateView({
-      session,
-      blueprint,
-      guestKey: input.guestKey,
-      mediaReady: hasLiveKitConfig(),
-    });
-    if (!view) throw new Error("Not a participant");
-    return { session, view };
+}): Promise<{ session: PracticeSessionRecord; view: RolePrivateView }> {
+  const session = await findGuestPracticeSessionByInvite(input.inviteToken);
+  if (!session) throw new Error("Invite not found");
+  if (session.mode !== "peer") {
+    throw new Error("This session is not peer inviteable");
   }
 
-  if (session.participants.filter((p) => !p.guestKey.startsWith("ai:")).length >= 2) {
+  const existing = session.participants.find(
+    (p) => p.guestKey === input.guestKey,
+  );
+  if (existing) {
+    return { session, view: toView(session, input.guestKey, false) };
+  }
+
+  if (
+    session.participants.filter((p) => !p.guestKey.startsWith("ai:")).length >=
+    2
+  ) {
     throw new Error("Session is full");
   }
 
@@ -129,59 +139,57 @@ export function joinPracticeSession(input: {
   const peerRole: SessionRole =
     host.initialRole === "examiner" ? "candidate" : "examiner";
 
-  session.participants.push({
-    id: randomUUID(),
-    guestKey: input.guestKey,
-    displayName: input.displayName,
-    initialRole: peerRole,
-    attendance: "joined",
-  });
-  session.status = "in_progress";
-  session.stateVersion += 1;
-  s.sessionsById.set(session.id, session);
+  const next: PracticeSessionRecord = {
+    ...session,
+    status: "in_progress",
+    stateVersion: session.stateVersion + 1,
+    participants: [
+      ...session.participants,
+      {
+        id: randomUUID(),
+        guestKey: input.guestKey,
+        displayName: input.displayName,
+        initialRole: peerRole,
+        attendance: "joined",
+      },
+    ],
+  };
 
-  const blueprint = loadBlueprintFromDisk();
-  const view = buildRolePrivateView({
-    session,
-    blueprint,
-    guestKey: input.guestKey,
-    mediaReady: hasLiveKitConfig(),
-  });
-  if (!view) throw new Error("Failed to build peer view");
-  return { session, view };
+  await updateGuestPracticeSession(next);
+  return { session: next, view: toView(next, input.guestKey, false) };
 }
 
-export function getPracticeView(
+export async function getPracticeView(
   sessionId: string,
   guestKey: string,
-): RolePrivateView | null {
-  const session = store().sessionsById.get(sessionId);
+): Promise<RolePrivateView | null> {
+  if (!isGuestPracticeDbConfigured()) return null;
+  const session = await findGuestPracticeSessionById(sessionId);
   if (!session) return null;
-  const blueprint = loadBlueprintFromDisk();
-  return buildRolePrivateView({
-    session,
-    blueprint,
-    guestKey,
-    includeInviteToken: session.hostGuestKey === guestKey && session.mode === "peer",
-    mediaReady: hasLiveKitConfig(),
-  });
+  try {
+    return toView(
+      session,
+      guestKey,
+      session.hostGuestKey === guestKey && session.mode === "peer",
+    );
+  } catch {
+    return null;
+  }
 }
 
-export function getPracticeSession(sessionId: string): PracticeSessionRecord | null {
-  return store().sessionsById.get(sessionId) ?? null;
+export async function getPracticeSession(
+  sessionId: string,
+): Promise<PracticeSessionRecord | null> {
+  if (!isGuestPracticeDbConfigured()) return null;
+  return findGuestPracticeSessionById(sessionId);
 }
 
-export function transitionPracticeSession(
+export async function transitionPracticeSession(
   sessionId: string,
   guestKey: string,
   action: "next_stage" | "complete",
-): RolePrivateView {
-  const session = store().sessionsById.get(sessionId);
-  if (!session) throw new Error("Session not found");
-  if (!session.participants.some((p) => p.guestKey === guestKey)) {
-    throw new Error("Not a participant");
-  }
-
+): Promise<RolePrivateView> {
+  const session = await assertParticipant(sessionId, guestKey);
   const blueprint = loadBlueprintFromDisk();
   let next = session;
   if (action === "next_stage") {
@@ -195,23 +203,19 @@ export function transitionPracticeSession(
       stageEndsAt: null,
     };
   }
-  store().sessionsById.set(sessionId, next);
-  const view = buildRolePrivateView({
-    session: next,
-    blueprint,
+  await updateGuestPracticeSession(next);
+  return toView(
+    next,
     guestKey,
-    includeInviteToken: next.hostGuestKey === guestKey && next.mode === "peer",
-    mediaReady: hasLiveKitConfig(),
-  });
-  if (!view) throw new Error("Not a participant");
-  return view;
+    next.hostGuestKey === guestKey && next.mode === "peer",
+  );
 }
 
-export function assertParticipant(
+export async function assertParticipant(
   sessionId: string,
   guestKey: string,
-): PracticeSessionRecord {
-  const session = store().sessionsById.get(sessionId);
+): Promise<PracticeSessionRecord> {
+  const session = await findGuestPracticeSessionById(sessionId);
   if (!session) throw new Error("Session not found");
   if (!session.participants.some((p) => p.guestKey === guestKey)) {
     throw new Error("Not a participant");

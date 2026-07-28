@@ -13,7 +13,11 @@ export function createLiveKitAdapter(): MediaSessionAdapter {
       return { roomName: roomNameForSession(sessionId) };
     },
     async issueJoinGrant({ sessionId, participantId }) {
-      return issueLiveKitToken({ sessionId, participantId, guestKey: participantId });
+      return issueLiveKitToken({
+        sessionId,
+        participantId,
+        guestKey: participantId,
+      });
     },
   };
 }
@@ -27,15 +31,17 @@ export async function issueLiveKitToken(input: {
   if (!hasLiveKitConfig(env)) {
     throw new Error("LiveKit is not configured");
   }
-  const session = assertParticipant(input.sessionId, input.guestKey);
-  const participant = session.participants.find((p) => p.guestKey === input.guestKey);
+  const session = await assertParticipant(input.sessionId, input.guestKey);
+  const participant = session.participants.find(
+    (p) => p.guestKey === input.guestKey,
+  );
   if (!participant) throw new Error("Not a participant");
 
   const roomName = roomNameForSession(session.id);
   const at = new AccessToken(env.LIVEKIT_API_KEY!, env.LIVEKIT_API_SECRET!, {
     identity: participant.id,
     name: participant.displayName,
-    ttl: "10m",
+    ttl: "30m",
   });
   at.addGrant({
     roomJoin: true,
@@ -46,7 +52,7 @@ export async function issueLiveKitToken(input: {
   });
 
   const token = await at.toJwt();
-  const expiresAt = new Date(Date.now() + 10 * 60 * 1000).toISOString();
+  const expiresAt = new Date(Date.now() + 30 * 60 * 1000).toISOString();
   return {
     roomName,
     token,

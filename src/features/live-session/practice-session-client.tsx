@@ -5,8 +5,12 @@ import {
   LiveKitRoom,
   RoomAudioRenderer,
   ControlBar,
+  GridLayout,
+  ParticipantTile,
+  useTracks,
   useParticipants,
 } from "@livekit/components-react";
+import { Track } from "livekit-client";
 import "@livekit/components-styles";
 import {
   Bot,
@@ -47,6 +51,59 @@ function ParticipantCount() {
     <span className="text-sm text-[var(--color-muted)]">
       {participants.length} in room
     </span>
+  );
+}
+
+function MediaStage({ videoEnabled }: { videoEnabled: boolean }) {
+  const tracks = useTracks(
+    videoEnabled
+      ? [
+          { source: Track.Source.Camera, withPlaceholder: true },
+          { source: Track.Source.ScreenShare, withPlaceholder: false },
+        ]
+      : [{ source: Track.Source.Camera, withPlaceholder: false }],
+    { onlySubscribed: false },
+  );
+
+  if (!videoEnabled) {
+    return (
+      <>
+        <ParticipantCount />
+        <RoomAudioRenderer />
+        <ControlBar
+          controls={{
+            camera: false,
+            screenShare: false,
+            leave: false,
+          }}
+        />
+      </>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      <div className="flex items-center justify-between">
+        <ParticipantCount />
+      </div>
+      <div className="overflow-hidden rounded-[var(--radius-md)] border border-[var(--color-border)] bg-[var(--color-bg-elevated)]">
+        <GridLayout
+          tracks={tracks}
+          style={{ minHeight: "280px", maxHeight: "420px" }}
+        >
+          <ParticipantTile />
+        </GridLayout>
+      </div>
+      <RoomAudioRenderer />
+      <ControlBar
+        controls={{
+          camera: true,
+          microphone: true,
+          screenShare: false,
+          leave: false,
+        }}
+      />
+    </div>
   );
 }
 
@@ -267,11 +324,13 @@ export function PracticeSessionClient({
         ) : null}
 
         <Card className="space-y-3">
-          <h3 className="font-semibold">Live audio</h3>
+          <h3 className="font-semibold">
+            {view.videoEnabled ? "Live video & audio" : "Live audio"}
+          </h3>
           {view.mode === "ai_examiner" ? (
             <p className="text-sm text-[var(--color-muted)]">
               AI examiner mode uses on-screen guidance and follow-up suggestions.
-              Peer sessions include live audio when both partners are connected.
+              Peer sessions include live media when both partners are connected.
             </p>
           ) : livekit ? (
             <LiveKitRoom
@@ -279,25 +338,17 @@ export function PracticeSessionClient({
               serverUrl={livekit.url}
               connect
               audio
-              video={false}
+              video={view.videoEnabled}
               className="space-y-3"
               data-lk-theme="default"
             >
-              <ParticipantCount />
-              <RoomAudioRenderer />
-              <ControlBar
-                controls={{
-                  camera: false,
-                  screenShare: false,
-                  leave: false,
-                }}
-              />
+              <MediaStage videoEnabled={view.videoEnabled} />
             </LiveKitRoom>
           ) : (
             <p className="text-sm text-[var(--color-muted)]">
               {view.mediaReady
-                ? "Connecting to audio…"
-                : "Live audio will be available once media is configured."}
+                ? "Connecting to media…"
+                : "Live media will be available once LiveKit is configured."}
             </p>
           )}
         </Card>

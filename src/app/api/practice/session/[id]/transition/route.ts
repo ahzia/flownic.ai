@@ -13,14 +13,24 @@ export async function POST(request: Request, { params }: Params) {
   const { id } = await params;
   const guestKey = readCookie(request.headers.get("cookie"), GUEST_KEY_COOKIE);
   if (!guestKey) {
-    return NextResponse.json({ ok: false, error: "Missing guest session" }, { status: 401 });
+    return NextResponse.json(
+      { ok: false, error: "Missing guest session" },
+      { status: 401 },
+    );
   }
   try {
     const parsed = bodySchema.safeParse(await request.json());
     if (!parsed.success) {
-      return NextResponse.json({ ok: false, error: "Invalid action" }, { status: 400 });
+      return NextResponse.json(
+        { ok: false, error: "Invalid action" },
+        { status: 400 },
+      );
     }
-    const view = transitionPracticeSession(id, guestKey, parsed.data.action);
+    const view = await transitionPracticeSession(
+      id,
+      guestKey,
+      parsed.data.action,
+    );
     return NextResponse.json({ ok: true, view });
   } catch (error) {
     return NextResponse.json(

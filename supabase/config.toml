@@ -4,7 +4,7 @@ project_id = "flownic-local"
 enabled = true
 
 [db]
-major_version = 15
+major_version = 17
 
 [auth]
 enabled = true

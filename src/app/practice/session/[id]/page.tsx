@@ -14,7 +14,7 @@ export default async function PracticeSessionPage({ params }: Props) {
     redirect("/practice");
   }
 
-  const view = getPracticeView(id, guestKey);
+  const view = await getPracticeView(id, guestKey);
   if (!view) {
     redirect("/practice");
   }

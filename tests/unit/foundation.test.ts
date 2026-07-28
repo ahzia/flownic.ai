@@ -127,11 +127,13 @@ describe("blueprint role privacy", () => {
       session,
       blueprint,
       guestKey: "host",
+      videoEnabled: true,
     });
     const candidateView = buildRolePrivateView({
       session,
       blueprint,
       guestKey: "peer",
+      videoEnabled: true,
     });
 
     expect(examinerView?.yourRole).toBe("examiner");
@@ -140,6 +142,7 @@ describe("blueprint role privacy", () => {
     expect(candidateView?.stageInstruction).not.toContain("Never show these cues");
     expect(candidateView?.followUpAvailable).toBe(false);
     expect(examinerView?.followUpAvailable).toBe(true);
+    expect(examinerView?.videoEnabled).toBe(true);
 
     const advanced = advanceStage(session, blueprint);
     expect(advanced.currentStageIndex).toBe(2);

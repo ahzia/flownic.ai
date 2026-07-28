@@ -25,12 +25,12 @@ export async function requestExaminerFollowUp(input: {
   sessionId: string;
   guestKey: string;
 }): Promise<FollowUpResult> {
-  const view = getPracticeView(input.sessionId, input.guestKey);
+  const view = await getPracticeView(input.sessionId, input.guestKey);
   if (!view) throw new Error("Session not found");
   if (view.yourRole !== "examiner") {
     throw new Error("Follow-ups are examiner-only");
   }
-  assertParticipant(input.sessionId, input.guestKey);
+  await assertParticipant(input.sessionId, input.guestKey);
 
   if (!view.followUpAvailable) {
     return {

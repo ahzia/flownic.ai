@@ -143,6 +143,7 @@ export type RolePrivateView = {
   followUpAvailable: boolean;
   inviteToken: string | null;
   mediaReady: boolean;
+  videoEnabled: boolean;
 };
 
 export function buildRolePrivateView(options: {
@@ -152,6 +153,7 @@ export function buildRolePrivateView(options: {
   locale?: "de" | "en";
   includeInviteToken?: boolean;
   mediaReady?: boolean;
+  videoEnabled?: boolean;
 }): RolePrivateView | null {
   const {
     session,
@@ -160,6 +162,7 @@ export function buildRolePrivateView(options: {
     locale = "en",
     includeInviteToken = false,
     mediaReady = false,
+    videoEnabled = true,
   } = options;
 
   const you = session.participants.find((p) => p.guestKey === guestKey);
@@ -208,5 +211,6 @@ export function buildRolePrivateView(options: {
     followUpAvailable: yourRole === "examiner" ? followUpAvailable : false,
     inviteToken: includeInviteToken ? session.inviteToken : null,
     mediaReady,
+    videoEnabled,
   };
 }

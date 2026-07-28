@@ -135,7 +135,7 @@ create table public.session_participants (
   actor_type text not null default 'human'
     check (actor_type in ('human', 'ai')),
   initial_role text not null check (initial_role in ('examiner', 'candidate')),
-  current_role text not null check (current_role in ('examiner', 'candidate')),
+  active_role text not null check (active_role in ('examiner', 'candidate')),
   attendance_state text not null default 'expected'
     check (attendance_state in (
       'expected',

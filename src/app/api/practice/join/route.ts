@@ -29,14 +29,17 @@ export async function POST(request: Request) {
       GUEST_KEY_COOKIE,
     );
     const guestKey = existingKey ?? randomUUID();
-    const { view } = joinPracticeSession({
+    const { view } = await joinPracticeSession({
       inviteToken: parsed.data.inviteToken,
       guestKey,
       displayName: parsed.data.displayName,
     });
 
     const response = NextResponse.json({ ok: true, view });
-    for (const cookie of guestCookieHeaders(guestKey, parsed.data.displayName)) {
+    for (const cookie of guestCookieHeaders(
+      guestKey,
+      parsed.data.displayName,
+    )) {
       response.headers.append("Set-Cookie", cookie);
     }
     return response;
