@@ -1,14 +1,20 @@
 import { randomUUID } from "node:crypto";
 import type { SessionMode, SessionRole } from "@/domain/booking/types";
+import { toExaminerStageView } from "@/domain/blueprint/schema";
 import { loadBlueprintFromDisk } from "@/server/services/blueprint";
 import {
   advanceStage,
   buildRolePrivateView,
   getStageKey,
+  resolveRoleForRound,
   startStageTiming,
   type PracticeSessionRecord,
   type RolePrivateView,
 } from "@/domain/session/state";
+import type {
+  FollowUpSuggestion,
+  TranscriptSegment,
+} from "@/domain/session/transcript";
 import {
   findGuestPracticeSessionById,
   findGuestPracticeSessionByInvite,
@@ -16,6 +22,8 @@ import {
   isGuestPracticeDbConfigured,
   updateGuestPracticeSession,
 } from "@/server/db/guest-practice";
+import { generateFollowUpFromContext } from "@/server/ai/follow-up";
+import { generatePracticeReport } from "@/server/ai/practice-report";
 import { getFeatureFlags, hasLiveKitConfig } from "@/shared/env";
 
 function opaqueToken(): string {
@@ -27,6 +35,7 @@ function mediaOptions() {
   return {
     mediaReady: hasLiveKitConfig(),
     videoEnabled: flags.videoEnabled,
+    liveTranscriptionEnabled: flags.liveTranscriptionEnabled,
   };
 }
 
@@ -45,6 +54,14 @@ function toView(
   });
   if (!view) throw new Error("Not a participant");
   return view;
+}
+
+function emptyAiFields() {
+  return {
+    transcriptSegments: [] as TranscriptSegment[],
+    followUpSuggestions: [] as FollowUpSuggestion[],
+    practiceReport: null,
+  };
 }
 
 export async function createPracticeSession(input: {
@@ -89,6 +106,7 @@ export async function createPracticeSession(input: {
         attendance: "joined",
       },
     ],
+    ...emptyAiFields(),
   };
 
   if (input.mode === "ai_examiner") {
@@ -184,6 +202,136 @@ export async function getPracticeSession(
   return findGuestPracticeSessionById(sessionId);
 }
 
+export async function appendTranscriptSegment(input: {
+  sessionId: string;
+  guestKey: string;
+  text: string;
+  source: "speech" | "mock";
+}): Promise<RolePrivateView> {
+  const session = await assertParticipant(input.sessionId, input.guestKey);
+  if (session.status !== "in_progress" && session.status !== "waiting") {
+    throw new Error("Session is not accepting transcript");
+  }
+
+  const blueprint = loadBlueprintFromDisk();
+  const you = session.participants.find((p) => p.guestKey === input.guestKey)!;
+  const role = resolveRoleForRound(
+    you.initialRole,
+    session.currentRoundIndex,
+    blueprint,
+  );
+  if (role !== "candidate") {
+    throw new Error("Only the candidate can post transcript segments");
+  }
+
+  const text = input.text.trim().slice(0, 1000);
+  if (!text) throw new Error("Empty transcript");
+
+  const stageKey = getStageKey(
+    blueprint,
+    session.currentRoundIndex,
+    session.currentStageIndex,
+  );
+
+  const segment: TranscriptSegment = {
+    id: randomUUID(),
+    speakerRole: "candidate",
+    participantId: you.id,
+    stageKey,
+    text,
+    createdAt: new Date().toISOString(),
+    source: input.source,
+  };
+
+  const segments = [...(session.transcriptSegments ?? []), segment].slice(-80);
+  let next: PracticeSessionRecord = {
+    ...session,
+    transcriptSegments: segments,
+    stateVersion: session.stateVersion + 1,
+  };
+
+  const flags = getFeatureFlags();
+  if (flags.examinerFollowupsEnabled) {
+    const starterQuestions =
+      stageKey != null
+        ? toExaminerStageView(blueprint, stageKey, blueprint.defaultLocale)
+            .starterQuestions
+        : [];
+    const suggestions = await generateFollowUpFromContext({
+      stageKey,
+      starterQuestions,
+      recentCandidateText: segments
+        .filter((s) => s.speakerRole === "candidate")
+        .slice(-4)
+        .map((s) => s.text),
+      trackSlug: blueprint.trackSlug,
+      disclaimer: blueprint.disclaimer,
+    });
+    next = {
+      ...next,
+      followUpSuggestions: suggestions.suggestions,
+    };
+  }
+
+  await updateGuestPracticeSession(next);
+  return toView(
+    next,
+    input.guestKey,
+    next.hostGuestKey === input.guestKey && next.mode === "peer",
+  );
+}
+
+export async function refreshFollowUps(
+  sessionId: string,
+  guestKey: string,
+): Promise<RolePrivateView> {
+  const session = await assertParticipant(sessionId, guestKey);
+  const blueprint = loadBlueprintFromDisk();
+  const you = session.participants.find((p) => p.guestKey === guestKey)!;
+  const role = resolveRoleForRound(
+    you.initialRole,
+    session.currentRoundIndex,
+    blueprint,
+  );
+  if (role !== "examiner") {
+    throw new Error("Follow-ups are examiner-only");
+  }
+
+  const stageKey = getStageKey(
+    blueprint,
+    session.currentRoundIndex,
+    session.currentStageIndex,
+  );
+  const starterQuestions =
+    stageKey != null
+      ? toExaminerStageView(blueprint, stageKey, blueprint.defaultLocale)
+          .starterQuestions
+      : [];
+
+  const suggestions = await generateFollowUpFromContext({
+    stageKey,
+    starterQuestions,
+    recentCandidateText: (session.transcriptSegments ?? [])
+      .filter((s) => s.speakerRole === "candidate")
+      .slice(-4)
+      .map((s) => s.text),
+    trackSlug: blueprint.trackSlug,
+    disclaimer: blueprint.disclaimer,
+  });
+
+  const next: PracticeSessionRecord = {
+    ...session,
+    followUpSuggestions: suggestions.suggestions,
+    stateVersion: session.stateVersion + 1,
+  };
+  await updateGuestPracticeSession(next);
+  return toView(
+    next,
+    guestKey,
+    next.hostGuestKey === guestKey && next.mode === "peer",
+  );
+}
+
 export async function transitionPracticeSession(
   sessionId: string,
   guestKey: string,
@@ -193,14 +341,32 @@ export async function transitionPracticeSession(
   const blueprint = loadBlueprintFromDisk();
   let next = session;
   if (action === "next_stage") {
-    next = advanceStage(session, blueprint);
+    next = {
+      ...advanceStage(session, blueprint),
+      followUpSuggestions: [],
+    };
   } else {
     next = {
       ...session,
-      status: "completed",
+      status: "processing",
       stateVersion: session.stateVersion + 1,
       stageStartedAt: null,
       stageEndsAt: null,
+    };
+    await updateGuestPracticeSession(next);
+
+    const report = await generatePracticeReport({
+      segments: session.transcriptSegments ?? [],
+      stageKeys: blueprint.stages.map((s) => s.key),
+      trackSlug: blueprint.trackSlug,
+      disclaimer: blueprint.disclaimer,
+    });
+
+    next = {
+      ...next,
+      status: "completed",
+      practiceReport: report,
+      stateVersion: next.stateVersion + 1,
     };
   }
   await updateGuestPracticeSession(next);

@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { GUEST_KEY_COOKIE, readCookie } from "@/server/auth/guest";
-import { requestExaminerFollowUp } from "@/server/ai/follow-up";
+import { refreshFollowUps } from "@/server/services/practice-session";
 
 type Params = { params: Promise<{ id: string }> };
 
@@ -11,11 +11,12 @@ export async function POST(request: Request, { params }: Params) {
     return NextResponse.json({ ok: false, error: "Missing guest session" }, { status: 401 });
   }
   try {
-    const result = await requestExaminerFollowUp({
-      sessionId: id,
-      guestKey,
+    const view = await refreshFollowUps(id, guestKey);
+    return NextResponse.json({
+      ok: true,
+      suggestions: view.followUpSuggestions,
+      view,
     });
-    return NextResponse.json({ ok: true, ...result });
   } catch (error) {
     return NextResponse.json(
       {

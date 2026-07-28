@@ -24,6 +24,12 @@ If you use a **different** Supabase project, run this SQL in **SQL Editor**:
 
 `supabase/migrations/20260728010000_guest_practice_sessions.sql`
 
+Then also apply transcript/report columns:
+
+`supabase/migrations/20260728040000_guest_practice_transcript_report.sql`
+
+Or from the repo: `supabase db push` (if linked).
+
 ### Optional later
 
 - Full MVP schema is in `supabase/pending/full_mvp_schema.sql` (not required for peer tryout).

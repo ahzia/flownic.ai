@@ -1,8 +1,11 @@
 import type { PracticeParticipant, PracticeSessionRecord } from "@/domain/session/state";
 import type { SessionMode, SessionStatus } from "@/domain/booking/types";
-import {
-  createSecretSupabaseClient,
-} from "@/server/db/secret-client";
+import type {
+  FollowUpSuggestion,
+  PracticeReport,
+  TranscriptSegment,
+} from "@/domain/session/transcript";
+import { createSecretSupabaseClient } from "@/server/db/secret-client";
 import {
   getEnv,
   getSupabaseSecretKey,
@@ -21,6 +24,9 @@ type GuestPracticeRow = {
   stage_started_at: string | null;
   stage_ends_at: string | null;
   participants: PracticeParticipant[];
+  transcript_segments?: TranscriptSegment[] | null;
+  follow_up_suggestions?: FollowUpSuggestion[] | null;
+  practice_report?: PracticeReport | null;
   created_at: string;
 };
 
@@ -51,6 +57,9 @@ function rowToSession(row: GuestPracticeRow): PracticeSessionRecord {
     stageStartedAt: row.stage_started_at,
     stageEndsAt: row.stage_ends_at,
     participants: row.participants,
+    transcriptSegments: row.transcript_segments ?? [],
+    followUpSuggestions: row.follow_up_suggestions ?? [],
+    practiceReport: row.practice_report ?? null,
     createdAt: row.created_at,
   };
 }
@@ -68,6 +77,9 @@ function sessionToRow(session: PracticeSessionRecord): GuestPracticeRow {
     stage_started_at: session.stageStartedAt,
     stage_ends_at: session.stageEndsAt,
     participants: session.participants,
+    transcript_segments: session.transcriptSegments ?? [],
+    follow_up_suggestions: session.followUpSuggestions ?? [],
+    practice_report: session.practiceReport ?? null,
     created_at: session.createdAt,
   };
 }
@@ -100,6 +112,9 @@ export async function updateGuestPracticeSession(
       stage_started_at: row.stage_started_at,
       stage_ends_at: row.stage_ends_at,
       participants: row.participants,
+      transcript_segments: row.transcript_segments,
+      follow_up_suggestions: row.follow_up_suggestions,
+      practice_report: row.practice_report,
     })
     .eq("id", session.id);
   if (error) {

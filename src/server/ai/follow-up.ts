@@ -1,11 +1,6 @@
 import OpenAI from "openai";
 import { z } from "zod";
 import { getEnv, hasOpenAIConfig } from "@/shared/env";
-import { loadBlueprintFromDisk } from "@/server/services/blueprint";
-import {
-  assertParticipant,
-  getPracticeView,
-} from "@/server/services/practice-session";
 
 const followUpSchema = z.object({
   suggestions: z
@@ -21,45 +16,42 @@ const followUpSchema = z.object({
 
 export type FollowUpResult = z.infer<typeof followUpSchema>;
 
-export async function requestExaminerFollowUp(input: {
-  sessionId: string;
-  guestKey: string;
-}): Promise<FollowUpResult> {
-  const view = await getPracticeView(input.sessionId, input.guestKey);
-  if (!view) throw new Error("Session not found");
-  if (view.yourRole !== "examiner") {
-    throw new Error("Follow-ups are examiner-only");
-  }
-  await assertParticipant(input.sessionId, input.guestKey);
-
-  if (!view.followUpAvailable) {
-    return {
-      suggestions: [
-        {
-          intent: "clarify",
-          text: "Ask the candidate to explain one detail more clearly.",
-        },
-      ],
-    };
-  }
-
-  const env = getEnv();
-  if (!hasOpenAIConfig(env)) {
+function offlineSuggestions(starterQuestions: string[]): FollowUpResult {
+  const picked = starterQuestions.slice(0, 2);
+  if (picked.length === 0) {
     return {
       suggestions: [
         {
           intent: "expand",
-          text: "Could you give a short example from everyday life?",
+          text: "Können Sie dazu ein kurzes Beispiel aus dem Alltag nennen?",
         },
         {
           intent: "clarify",
-          text: "What do you mean by that — can you say it another way?",
+          text: "Was meinen Sie genau — können Sie das anders sagen?",
         },
       ],
     };
   }
+  return {
+    suggestions: picked.map((text, index) => ({
+      intent: (index === 0 ? "clarify" : "expand") as "clarify" | "expand",
+      text,
+    })),
+  };
+}
 
-  const blueprint = loadBlueprintFromDisk();
+export async function generateFollowUpFromContext(input: {
+  stageKey: string | null;
+  starterQuestions: string[];
+  recentCandidateText: string[];
+  trackSlug: string;
+  disclaimer: string;
+}): Promise<FollowUpResult> {
+  const env = getEnv();
+  if (!hasOpenAIConfig(env)) {
+    return offlineSuggestions(input.starterQuestions);
+  }
+
   const openai = new OpenAI({ apiKey: env.OPENAI_API_KEY });
   const completion = await openai.chat.completions.create({
     model: env.AI_FOLLOWUP_MODEL,
@@ -68,32 +60,27 @@ export async function requestExaminerFollowUp(input: {
       {
         role: "system",
         content:
-          "You help a practice partner acting as examiner in a telc B1 speaking mock. Return JSON {\"suggestions\":[{\"intent\":\"clarify|expand|example\",\"text\":\"...\"}]} with 1-2 short spoken prompts in the session language. Never reveal scores, never claim official affiliation, never give the candidate answers.",
+          "You help a practice partner acting as examiner in a Flownic telc Deutsch B1 speaking mock. Return JSON {\"suggestions\":[{\"intent\":\"clarify|expand|example\",\"text\":\"...\"}]} with 1-2 short spoken follow-up questions in German (B1 level), ready to say aloud. Build on recent candidate transcript when provided. Prefer open questions. Never reveal scores, never claim telc affiliation, never give the candidate answers or model speeches.",
       },
       {
         role: "user",
         content: JSON.stringify({
-          stageKey: view.stageKey,
-          roundKey: view.roundKey,
-          examinerInstruction: view.stageInstruction,
-          track: blueprint.trackSlug,
-          disclaimer: blueprint.disclaimer,
+          stageKey: input.stageKey,
+          starterQuestions: input.starterQuestions,
+          recentCandidateText: input.recentCandidateText,
+          track: input.trackSlug,
+          disclaimer: input.disclaimer,
         }),
       },
     ],
   });
 
   const raw = completion.choices[0]?.message?.content ?? "{}";
-  const parsed = followUpSchema.safeParse(JSON.parse(raw));
-  if (!parsed.success) {
-    return {
-      suggestions: [
-        {
-          intent: "clarify",
-          text: "Please say a bit more about your last point.",
-        },
-      ],
-    };
+  try {
+    const parsed = followUpSchema.safeParse(JSON.parse(raw));
+    if (parsed.success) return parsed.data;
+  } catch {
+    // fall through
   }
-  return parsed.data;
+  return offlineSuggestions(input.starterQuestions);
 }

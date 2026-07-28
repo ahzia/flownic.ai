@@ -1,7 +1,7 @@
 {
   "schemaVersion": 1,
   "trackSlug": "telc-de-b1-speaking",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "status": "draft",
   "defaultLocale": "de",
   "supportedInstructionLocales": ["de", "en"],
@@ -14,28 +14,41 @@
     {
       "key": "round-1",
       "roleAssignment": "initial",
-      "stages": ["intro", "task-1", "task-2", "planning"]
+      "stages": ["intro", "topic-talk", "planning"]
     },
     {
       "key": "round-2",
       "roleAssignment": "swapped",
-      "stages": ["intro", "task-1", "task-2", "planning"]
+      "stages": ["intro", "topic-talk", "planning"]
     }
   ],
   "stages": [
     {
       "key": "intro",
-      "durationSeconds": 60,
+      "title": {
+        "de": "Teil 1 — Einander kennenlernen",
+        "en": "Part 1 — Getting to know each other"
+      },
+      "durationSeconds": 180,
       "candidateInstructionKey": "intro.candidate",
       "examinerInstructionKey": "intro.examiner",
-      "taskVariantIds": []
-    },
-    {
-      "key": "task-1",
-      "durationSeconds": 180,
-      "candidateInstructionKey": "task1.candidate",
-      "examinerInstructionKey": "task1.examiner",
-      "taskVariantIds": ["task1-placeholder-v1"],
+      "taskVariantIds": ["intro-everyday-v1"],
+      "starterQuestions": {
+        "de": [
+          "Wie heißen Sie und woher kommen Sie?",
+          "Wohnen Sie allein, mit Familie oder mit Freunden?",
+          "Was machen Sie beruflich oder was studieren Sie?",
+          "Welche Hobbys haben Sie?",
+          "Warum lernen Sie Deutsch?"
+        ],
+        "en": [
+          "What is your name and where are you from?",
+          "Do you live alone, with family, or with friends?",
+          "What do you do for work or what do you study?",
+          "What hobbies do you have?",
+          "Why are you learning German?"
+        ]
+      },
       "followUpPolicy": {
         "enabled": true,
         "maxSuggestions": 2,
@@ -43,57 +56,94 @@
       }
     },
     {
-      "key": "task-2",
-      "durationSeconds": 180,
-      "candidateInstructionKey": "task2.candidate",
-      "examinerInstructionKey": "task2.examiner",
-      "taskVariantIds": ["task2-placeholder-v1"],
+      "key": "topic-talk",
+      "title": {
+        "de": "Teil 2 — Über ein Thema sprechen",
+        "en": "Part 2 — Discuss a topic"
+      },
+      "durationSeconds": 360,
+      "candidateInstructionKey": "topic.candidate",
+      "examinerInstructionKey": "topic.examiner",
+      "taskVariantIds": ["topic-remote-work-v1"],
+      "starterQuestions": {
+        "de": [
+          "Können Sie den Text kurz zusammenfassen?",
+          "Was ist Ihre eigene Meinung dazu?",
+          "Haben Sie selbst schon so etwas erlebt?",
+          "Welche Vorteile sehen Sie — und welche Nachteile?",
+          "Was würden Sie Freunden in dieser Situation raten?"
+        ],
+        "en": [
+          "Can you briefly summarize the text?",
+          "What is your own opinion?",
+          "Have you experienced something like this yourself?",
+          "What advantages and disadvantages do you see?",
+          "What would you advise friends in this situation?"
+        ]
+      },
       "followUpPolicy": {
         "enabled": true,
         "maxSuggestions": 2,
-        "allowedIntents": ["clarify", "expand"]
+        "allowedIntents": ["clarify", "expand", "example"]
       }
     },
     {
       "key": "planning",
-      "durationSeconds": 180,
+      "title": {
+        "de": "Teil 3 — Gemeinsam etwas planen",
+        "en": "Part 3 — Plan something together"
+      },
+      "durationSeconds": 360,
       "candidateInstructionKey": "planning.candidate",
       "examinerInstructionKey": "planning.examiner",
-      "taskVariantIds": ["planning-placeholder-v1"]
+      "taskVariantIds": ["plan-weekend-trip-v1"],
+      "starterQuestions": {
+        "de": [
+          "Wann soll die Aktivität stattfinden?",
+          "Wo treffen wir uns und wie kommen wir hin?",
+          "Was brauchen wir (Essen, Tickets, Kleidung)?",
+          "Wer übernimmt welche Aufgabe?",
+          "Was machen wir, wenn das Wetter schlecht ist?"
+        ],
+        "en": [
+          "When should the activity take place?",
+          "Where do we meet and how do we get there?",
+          "What do we need (food, tickets, clothes)?",
+          "Who takes which task?",
+          "What do we do if the weather is bad?"
+        ]
+      },
+      "followUpPolicy": {
+        "enabled": true,
+        "maxSuggestions": 2,
+        "allowedIntents": ["clarify", "expand", "example"]
+      }
     }
   ],
   "instructions": {
     "intro.candidate": {
-      "de": "Begrüßen Sie Ihren Partner. Stellen Sie sich kurz vor.",
-      "en": "Greet your partner. Introduce yourself briefly."
+      "de": "Stellen Sie sich kurz vor und stellen Sie auch Fragen an Ihren Partner.\n\nSprechen Sie z. B. über:\n• Name und Herkunft\n• Wohnort / Familie\n• Beruf oder Studium\n• Hobbys und Freizeit\n• Warum Sie Deutsch lernen\n\nTipp: Antworten Sie in ganzen Sätzen und fragen Sie nach.",
+      "en": "Introduce yourself briefly and also ask your partner questions.\n\nTalk about, for example:\n• Name and origin\n• Where you live / family\n• Work or studies\n• Hobbies and free time\n• Why you are learning German\n\nTip: Answer in full sentences and ask follow-up questions."
     },
     "intro.examiner": {
-      "de": "Begrüßen Sie den Kandidaten. Starten Sie erst, wenn beide bereit sind. Geben Sie keine Bewertungshinweise.",
-      "en": "Greet the candidate. Start only when both are ready. Do not give evaluation hints."
+      "de": "Sie führen Teil 1 (Einander kennenlernen).\n\nZiel: Ein natürliches Gespräch, kein Verhör.\n\nSo starten Sie:\n1. Begrüßen Sie den Kandidaten freundlich.\n2. Stellen Sie sich sehr kurz vor (1–2 Sätze).\n3. Nutzen Sie die Starterfragen rechts/unten — eine nach der anderen.\n4. Reagieren Sie auf Antworten (z. B. „Interessant — und …?“).\n\nWichtig:\n• Geben Sie keine fertigen Antworten vor.\n• Korrigieren Sie nicht dauernd während des Sprechens.\n• Wenn der Partner stockt: eine kurze, offene Nachfrage stellen.\n• Diese Hinweise sind nur für Sie — der Partner sieht sie nicht.",
+      "en": "You lead Part 1 (Getting to know each other).\n\nGoal: A natural conversation, not an interrogation.\n\nHow to start:\n1. Greet the candidate warmly.\n2. Introduce yourself very briefly (1–2 sentences).\n3. Use the starter questions — one at a time.\n4. React to answers (e.g. “Interesting — and …?”).\n\nImportant:\n• Do not supply ready-made answers.\n• Do not constantly correct while they speak.\n• If they get stuck: ask one short open question.\n• These cues are private — your partner cannot see them."
     },
-    "task1.candidate": {
-      "de": "PLACEHOLDER — Sprechen Sie über das Thema auf der Aufgabenkarte (Originalinhalt nach Lehrer-Review).",
-      "en": "PLACEHOLDER — Speak about the topic on the task card (original content after teacher review)."
+    "topic.candidate": {
+      "de": "Thema: Arbeiten von zu Hause\n\nLesen Sie Ihren Standpunkt und erklären Sie ihn Ihrem Partner. Danach tauschen Sie Ihre Meinungen und Erfahrungen aus.\n\nIhr Text:\n„Viele Menschen arbeiten heute teilweise oder ganz von zu Hause. Das spart Zeit für den Arbeitsweg und macht den Alltag flexibler. Gleichzeitig vermissen manche den direkten Kontakt zu Kolleginnen und Kollegen und finden die Trennung zwischen Beruf und Freizeit schwieriger.“\n\nAufgabe:\n1. Fassen Sie den Text kurz zusammen.\n2. Sagen Sie, ob Sie zustimmen oder nicht — und warum.\n3. Erzählen Sie von einer eigenen Erfahrung (Arbeit, Studium oder Alltag).\n4. Fragen Sie Ihren Partner nach seiner Meinung.",
+      "en": "Topic: Working from home\n\nRead your viewpoint and explain it to your partner. Then exchange opinions and experiences.\n\nYour text:\n“Many people today work partly or fully from home. That saves commuting time and makes daily life more flexible. At the same time, some people miss direct contact with colleagues and find it harder to separate work and free time.”\n\nTask:\n1. Briefly summarize the text.\n2. Say whether you agree or not — and why.\n3. Share a personal experience (work, studies, or everyday life).\n4. Ask your partner for their opinion."
     },
-    "task1.examiner": {
-      "de": "PLACEHOLDER — Stellen Sie bei Bedarf 1–2 kurze Nachfragen. Zeigen Sie diese Hinweise dem Kandidaten nicht.",
-      "en": "PLACEHOLDER — Ask 1–2 short follow-ups if needed. Never show these cues to the candidate."
-    },
-    "task2.candidate": {
-      "de": "PLACEHOLDER — Bearbeiten Sie die zweite Interaktionsaufgabe (Originalinhalt nach Lehrer-Review).",
-      "en": "PLACEHOLDER — Complete the second interaction task (original content after teacher review)."
-    },
-    "task2.examiner": {
-      "de": "PLACEHOLDER — Führen Sie die Interaktion; halten Sie die Zeit ein; keine Antwortvorgaben.",
-      "en": "PLACEHOLDER — Lead the interaction; keep time; do not supply answers."
+    "topic.examiner": {
+      "de": "Sie führen Teil 2 (Thema besprechen).\n\nThema: Arbeiten von zu Hause\n\nAblauf:\n1. Bitten Sie den Kandidaten, seinen Text kurz zusammenzufassen.\n2. Hören Sie zu, ohne zu unterbrechen.\n3. Stellen Sie dann 1–2 Nachfragen aus der Starterliste.\n4. Teilen Sie danach kurz Ihre eigene Meinung (1–2 Sätze) und laden Sie zum Vergleich ein.\n\nIhr Gegen-Standpunkt (zum Anregen, nicht zum Vorlesen als Prüfungstext):\n„Manche Unternehmen verlangen wieder mehr Präsenz im Büro, weil Teamarbeit und spontane Ideen vor Ort leichter sind. Andere bleiben bei Homeoffice, um Kosten und Pendelzeit zu sparen.“\n\nWenn das Gespräch stockt: eine Starterfrage stellen oder „Können Sie ein Beispiel nennen?“\nKeine Bewertung, keine Musterantwort. Diese Hinweise sind privat.",
+      "en": "You lead Part 2 (discuss a topic).\n\nTopic: Working from home\n\nFlow:\n1. Ask the candidate to briefly summarize their text.\n2. Listen without interrupting.\n3. Then ask 1–2 follow-ups from the starter list.\n4. Share your own opinion briefly (1–2 sentences) and invite comparison.\n\nYour contrasting prompt (to stimulate talk, not an official exam text):\n“Some companies want more office presence again because teamwork and spontaneous ideas are easier on site. Others keep remote work to save costs and commuting time.”\n\nIf the talk stalls: use a starter question or “Can you give an example?”\nNo scoring, no model answers. These cues are private."
     },
     "planning.candidate": {
-      "de": "PLACEHOLDER — Planen Sie gemeinsam die nächste Aktivität (Originalinhalt nach Lehrer-Review).",
-      "en": "PLACEHOLDER — Plan the next activity together (original content after teacher review)."
+      "de": "Gemeinsame Aufgabe: Plant ein Wochenende in einer deutschen Stadt (z. B. Köln, Hamburg oder München).\n\nBesprechen und entscheidet gemeinsam:\n• Wann fahrt ihr (Freitagabend / Samstagmorgen)?\n• Wie reist ihr (Zug, Bus, Auto)?\n• Wo übernachtet ihr (Hostel, Hotel, bei Freunden)?\n• Was wollt ihr machen (Museum, Park, Konzert, Essen)?\n• Wer organisiert Tickets / Unterkunft / Treffpunkt?\n• Plan B bei Regen\n\nAm Ende: Fasst klar zusammen, was ihr entschieden habt und wer was macht.",
+      "en": "Joint task: Plan a weekend in a German city (e.g. Cologne, Hamburg, or Munich).\n\nDiscuss and decide together:\n• When you leave (Friday evening / Saturday morning)\n• How you travel (train, bus, car)\n• Where you stay (hostel, hotel, with friends)\n• What you want to do (museum, park, concert, food)\n• Who organizes tickets / lodging / meeting point\n• Plan B if it rains\n\nAt the end: Clearly summarize what you decided and who does what."
     },
     "planning.examiner": {
-      "de": "PLACEHOLDER — Moderieren Sie die gemeinsame Planung ohne die Lösung vorzugeben.",
-      "en": "PLACEHOLDER — Moderate joint planning without giving the solution."
+      "de": "Sie führen Teil 3 (Gemeinsam planen).\n\nZiel: Ein echter Dialog mit Vorschlägen, Reaktionen und einer klaren Entscheidung.\n\nSo moderieren Sie:\n1. Lesen Sie die Aufgabe kurz vor oder fassen Sie sie in einem Satz zusammen.\n2. Lassen Sie den Kandidaten zuerst einen Vorschlag machen.\n3. Reagieren Sie (zustimmen / Alternative nennen) und nutzen Sie die Starterfragen.\n4. Achten Sie darauf, dass am Ende steht: Was? Wann? Wer macht was?\n\nHilfreiche Phrasen zum Anbieten (nicht vorsagen als fertige Lösung):\n• „Ich schlage vor, dass …“\n• „Wie wäre es mit …?“\n• „Das ist gut, aber vielleicht …“\n• „Also, wir haben entschieden, dass …“\n\nWenn eine Person dominiert: den anderen gezielt fragen.\nKeine Musterlösung vorgeben. Diese Hinweise sind privat.",
+      "en": "You lead Part 3 (plan together).\n\nGoal: A real dialogue with suggestions, reactions, and a clear decision.\n\nHow to moderate:\n1. Briefly state the task in one sentence.\n2. Let the candidate make the first suggestion.\n3. React (agree / offer an alternative) and use the starter questions.\n4. Make sure you finish with: What? When? Who does what?\n\nUseful phrases to model (do not dictate a full solution):\n• “I suggest that …”\n• “How about …?”\n• “That is good, but maybe …”\n• “So we decided that …”\n\nIf one person dominates: invite the other in.\nDo not give a model plan. These cues are private."
     }
   },
   "rubric": {
@@ -106,5 +156,5 @@
       "interaction"
     ]
   },
-  "disclaimer": "Flownic practice only. Not affiliated with telc gGmbH. Feedback is a practice estimate with evidence and uncertainty — not an official score or pass prediction."
+  "disclaimer": "Flownic original practice content inspired by the publicly described telc Deutsch B1 speaking structure (getting to know each other, topic talk, joint planning). Not affiliated with telc gGmbH. Not official exam questions or scores."
 }

@@ -2,64 +2,48 @@
 
 ## Go / no-go
 
-**Yes — safe to push and create a Vercel project** for a first preview deployment.
+**Yes — safe to push** once `pnpm check`, `pnpm test`, and `pnpm build` pass locally. `.env.local` is gitignored.
 
-`pnpm check`, `pnpm test`, and `pnpm build` all pass locally. `.env.local` is gitignored.
-
-## Critical production limitation
-
-Guest practice sessions currently use an **in-memory store** (`src/server/services/practice-session.ts`).
-
-On Vercel serverless this means:
-
-- Peer invite links may fail if host and peer hit different instances
-- Sessions can vanish on cold starts / redeploys
-
-**Implication:** marketing pages, login shell, and solo AI practice may work; **reliable two-browser peer demos need Supabase persistence next.**
+Guest practice persists in Supabase (`guest_practice_sessions`). Peer invites need those env vars + migrations applied.
 
 ## Before `git push`
 
-1. Confirm `.env.local` is **not** staged (`git status` should not list it).
+1. Confirm `.env.local` is **not** staged.
 2. Do not commit secrets, keys, or recordings.
 3. Remote: `git@github.com:ahzia/flownic.ai.git`
 
 ## Vercel project settings
 
 - Framework: Next.js (auto-detected)
-- Install: `pnpm install`
+- Install: `pnpm install --frozen-lockfile`
 - Build: `pnpm build`
 - Output: default Next.js
-- Node: 22.x
+- Node: **22.x** (pinned in `package.json` engines)
 
-## Environment variables to set in Vercel
+Build does **not** require provider secrets; missing keys only disable LiveKit/OpenAI/Supabase features at runtime.
 
-Copy from local `.env.local` into the Vercel project (Preview + Production as needed):
+## Environment variables (Preview + Production)
 
 | Variable | Required for |
 |---|---|
 | `NEXT_PUBLIC_ENVIRONMENT` | `preview` or `production` |
-| `NEXT_PUBLIC_SUPABASE_URL` | Auth / future persistence |
-| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Auth / future persistence |
-| `SUPABASE_SECRET_KEY` | Server privileged ops |
-| `NEXT_PUBLIC_LIVEKIT_URL` | Peer audio |
-| `LIVEKIT_API_KEY` | Peer audio tokens |
-| `LIVEKIT_API_SECRET` | Peer audio tokens |
-| `OPENAI_API_KEY` | Examiner follow-ups / AI practice |
-| Feature flags | Optional; defaults to off if blank |
+| `NEXT_PUBLIC_SUPABASE_URL` | Guest practice persistence |
+| `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` | Guest practice / auth |
+| `SUPABASE_SECRET_KEY` | Server guest session R/W |
+| `NEXT_PUBLIC_LIVEKIT_URL` | Peer audio/video |
+| `LIVEKIT_API_KEY` | LiveKit tokens |
+| `LIVEKIT_API_SECRET` | LiveKit tokens |
+| `OPENAI_API_KEY` | Auto follow-ups + practice reports |
+| `FEATURE_PEER_SESSIONS_ENABLED=true` | Peer invites |
+| `FEATURE_AI_FALLBACK_ENABLED=true` | AI examiner mode |
+| `FEATURE_EXAMINER_FOLLOWUPS_ENABLED=true` | Auto follow-up generation |
+| `FEATURE_LIVE_TRANSCRIPTION_ENABLED=true` | Web Speech / mock transcript loop |
+| `FEATURE_VIDEO_ENABLED=true` | Camera grid |
 
 Leave blank if unused: `RESEND_*`, `SENTRY_DSN`, `PAYMENT_LINK_URL`.
 
-## Suggested first git commands
+Also run guest practice migrations on the linked Supabase project (see `docs/runbooks/supabase-guest-practice.md`).
 
-```bash
-cd /Users/ahzia/kick-start/yc-flownic
-# repo may already be initialized
-git remote add origin git@github.com:ahzia/flownic.ai.git
-git add -A
-git status   # verify .env.local is absent
-git commit -m "Initial Flownic MVP scaffold with guest practice flow"
-git branch -M main
-git push -u origin main
-```
+## If install fails on Vercel
 
-Then import the repo in Vercel and paste env vars before the first production deploy.
+Copy the log from the first `Error:` / `ELIFECYCLE` line onward. Local `pnpm build` passing usually means env/Node/install mismatch, not TypeScript.

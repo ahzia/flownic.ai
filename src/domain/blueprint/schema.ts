@@ -11,12 +11,20 @@ const followUpPolicySchema = z.object({
   allowedIntents: z.array(z.enum(["clarify", "expand", "example"])).min(1),
 });
 
+const localizedStringSchema = z.record(z.enum(["de", "en"]), z.string().min(1));
+const localizedQuestionsSchema = z.record(
+  z.enum(["de", "en"]),
+  z.array(z.string().min(1)).min(1).max(12),
+);
+
 const stageSchema = z.object({
   key: z.string().min(1),
+  title: localizedStringSchema.optional(),
   durationSeconds: z.number().int().positive().max(1800),
   candidateInstructionKey: z.string().min(1),
   examinerInstructionKey: z.string().min(1),
   taskVariantIds: z.array(z.string()).default([]),
+  starterQuestions: localizedQuestionsSchema.optional(),
   followUpPolicy: followUpPolicySchema.optional(),
 });
 
@@ -98,17 +106,36 @@ export const blueprintSchema = z
 
 export type Blueprint = z.infer<typeof blueprintSchema>;
 
+function pickLocalized(
+  map: Partial<Record<"de" | "en", string>> | undefined,
+  locale: "de" | "en",
+  fallbackLocale: "de" | "en",
+): string | undefined {
+  return map?.[locale] ?? map?.[fallbackLocale];
+}
+
+function pickLocalizedList(
+  map: Partial<Record<"de" | "en", string[]>> | undefined,
+  locale: "de" | "en",
+  fallbackLocale: "de" | "en",
+): string[] {
+  return map?.[locale] ?? map?.[fallbackLocale] ?? [];
+}
+
 /** Candidate-safe stage view — never includes examiner instructions or follow-up policy. */
 export type CandidateStageView = {
   key: string;
+  title: string | null;
   durationSeconds: number;
   instruction: string;
 };
 
 export type ExaminerStageView = {
   key: string;
+  title: string | null;
   durationSeconds: number;
   instruction: string;
+  starterQuestions: string[];
   followUpPolicy?: {
     enabled: boolean;
     maxSuggestions: number;
@@ -129,6 +156,7 @@ export function toCandidateStageView(
   if (!instruction) throw new Error(`Missing candidate instruction for ${stageKey}`);
   return {
     key: stage.key,
+    title: pickLocalized(stage.title, locale, blueprint.defaultLocale) ?? null,
     durationSeconds: stage.durationSeconds,
     instruction,
   };
@@ -147,8 +175,14 @@ export function toExaminerStageView(
   if (!instruction) throw new Error(`Missing examiner instruction for ${stageKey}`);
   return {
     key: stage.key,
+    title: pickLocalized(stage.title, locale, blueprint.defaultLocale) ?? null,
     durationSeconds: stage.durationSeconds,
     instruction,
+    starterQuestions: pickLocalizedList(
+      stage.starterQuestions,
+      locale,
+      blueprint.defaultLocale,
+    ),
     followUpPolicy: stage.followUpPolicy,
   };
 }

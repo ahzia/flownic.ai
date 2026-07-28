@@ -4,6 +4,11 @@ import {
   toCandidateStageView,
   toExaminerStageView,
 } from "@/domain/blueprint/schema";
+import type {
+  FollowUpSuggestion,
+  PracticeReport,
+  TranscriptSegment,
+} from "@/domain/session/transcript";
 
 export type PracticeParticipant = {
   id: string;
@@ -25,6 +30,9 @@ export type PracticeSessionRecord = {
   stageStartedAt: string | null;
   stageEndsAt: string | null;
   participants: PracticeParticipant[];
+  transcriptSegments: TranscriptSegment[];
+  followUpSuggestions: FollowUpSuggestion[];
+  practiceReport: PracticeReport | null;
   createdAt: string;
 };
 
@@ -137,10 +145,20 @@ export type RolePrivateView = {
   peerDisplayName: string | null;
   roundKey: string | null;
   stageKey: string | null;
+  stageTitle: string | null;
   stageStartedAt: string | null;
   stageEndsAt: string | null;
   stageInstruction: string | null;
+  /** Examiner-only starter questions for the current stage. */
+  starterQuestions: string[];
   followUpAvailable: boolean;
+  /** Candidate speech visible to examiner; candidate sees own segments only. */
+  recentTranscript: TranscriptSegment[];
+  /** Examiner-only auto follow-ups. */
+  followUpSuggestions: FollowUpSuggestion[];
+  /** Shown after session completes. */
+  practiceReport: PracticeReport | null;
+  liveTranscriptionEnabled: boolean;
   inviteToken: string | null;
   mediaReady: boolean;
   videoEnabled: boolean;
@@ -154,15 +172,17 @@ export function buildRolePrivateView(options: {
   includeInviteToken?: boolean;
   mediaReady?: boolean;
   videoEnabled?: boolean;
+  liveTranscriptionEnabled?: boolean;
 }): RolePrivateView | null {
   const {
     session,
     blueprint,
     guestKey,
-    locale = "en",
+    locale = blueprint.defaultLocale,
     includeInviteToken = false,
     mediaReady = false,
     videoEnabled = true,
+    liveTranscriptionEnabled = false,
   } = options;
 
   const you = session.participants.find((p) => p.guestKey === guestKey);
@@ -181,19 +201,30 @@ export function buildRolePrivateView(options: {
     session.currentStageIndex,
   );
 
+  let stageTitle: string | null = null;
   let stageInstruction: string | null = null;
+  let starterQuestions: string[] = [];
   let followUpAvailable = false;
 
   if (stageKey) {
     if (yourRole === "examiner") {
       const view = toExaminerStageView(blueprint, stageKey, locale);
+      stageTitle = view.title;
       stageInstruction = view.instruction;
+      starterQuestions = view.starterQuestions;
       followUpAvailable = Boolean(view.followUpPolicy?.enabled);
     } else {
       const view = toCandidateStageView(blueprint, stageKey, locale);
+      stageTitle = view.title;
       stageInstruction = view.instruction;
     }
   }
+
+  const segments = session.transcriptSegments ?? [];
+  const recentTranscript =
+    yourRole === "examiner"
+      ? segments.filter((s) => s.speakerRole === "candidate").slice(-12)
+      : segments.filter((s) => s.participantId === you.id).slice(-12);
 
   return {
     sessionId: session.id,
@@ -205,10 +236,22 @@ export function buildRolePrivateView(options: {
     peerDisplayName: peer?.displayName ?? null,
     roundKey: round?.key ?? null,
     stageKey,
+    stageTitle,
     stageStartedAt: session.stageStartedAt,
     stageEndsAt: session.stageEndsAt,
     stageInstruction,
+    starterQuestions: yourRole === "examiner" ? starterQuestions : [],
     followUpAvailable: yourRole === "examiner" ? followUpAvailable : false,
+    recentTranscript,
+    followUpSuggestions:
+      yourRole === "examiner" || session.mode === "ai_examiner"
+        ? (session.followUpSuggestions ?? [])
+        : [],
+    practiceReport:
+      session.status === "completed" || session.status === "processing"
+        ? session.practiceReport
+        : null,
+    liveTranscriptionEnabled,
     inviteToken: includeInviteToken ? session.inviteToken : null,
     mediaReady,
     videoEnabled,

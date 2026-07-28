@@ -86,10 +86,13 @@ describe("blueprint role privacy", () => {
   const blueprint = blueprintSchema.parse(raw);
 
   it("keeps examiner instructions out of candidate views", () => {
-    const candidate = toCandidateStageView(blueprint, "task-1", "en");
-    const examiner = toExaminerStageView(blueprint, "task-1", "en");
-    expect(candidate.instruction).not.toContain("Never show these cues");
-    expect(examiner.instruction).toContain("Never show these cues");
+    const candidate = toCandidateStageView(blueprint, "intro", "de");
+    const examiner = toExaminerStageView(blueprint, "intro", "de");
+    expect(candidate.instruction).toContain("Stellen Sie sich kurz vor");
+    expect(examiner.instruction).toContain("Sie führen Teil 1");
+    expect(examiner.starterQuestions.length).toBeGreaterThan(0);
+    expect(candidate.instruction).not.toContain("der Partner sieht sie nicht");
+    expect(examiner.instruction).toContain("der Partner sieht sie nicht");
   });
 
   it("filters role-private payloads by participant", () => {
@@ -101,10 +104,25 @@ describe("blueprint role privacy", () => {
       hostGuestKey: "host",
       stateVersion: 1,
       currentRoundIndex: 0,
-      currentStageIndex: 1,
+      currentStageIndex: 0,
       stageStartedAt: new Date().toISOString(),
       stageEndsAt: new Date(Date.now() + 60000).toISOString(),
       createdAt: new Date().toISOString(),
+      transcriptSegments: [
+        {
+          id: "seg1",
+          speakerRole: "candidate",
+          participantId: "p2",
+          stageKey: "intro",
+          text: "Ich heiße Peer und komme aus Berlin.",
+          createdAt: new Date().toISOString(),
+          source: "mock",
+        },
+      ],
+      followUpSuggestions: [
+        { intent: "expand", text: "Können Sie mehr über Berlin erzählen?" },
+      ],
+      practiceReport: null,
       participants: [
         {
           id: "p1",
@@ -138,13 +156,77 @@ describe("blueprint role privacy", () => {
 
     expect(examinerView?.yourRole).toBe("examiner");
     expect(candidateView?.yourRole).toBe("candidate");
-    expect(examinerView?.stageInstruction).toContain("Never show these cues");
-    expect(candidateView?.stageInstruction).not.toContain("Never show these cues");
+    expect(examinerView?.stageTitle).toContain("Teil 1");
+    expect(examinerView?.stageInstruction).toContain("Sie führen Teil 1");
+    expect(examinerView?.starterQuestions[0]).toContain("Wie heißen Sie");
+    expect(candidateView?.stageInstruction).toContain("Stellen Sie sich kurz vor");
+    expect(candidateView?.starterQuestions).toEqual([]);
     expect(candidateView?.followUpAvailable).toBe(false);
     expect(examinerView?.followUpAvailable).toBe(true);
     expect(examinerView?.videoEnabled).toBe(true);
+    expect(examinerView?.followUpSuggestions).toHaveLength(1);
+    expect(candidateView?.followUpSuggestions).toEqual([]);
+    expect(examinerView?.recentTranscript[0]?.text).toContain("Berlin");
+    expect(candidateView?.recentTranscript[0]?.text).toContain("Berlin");
 
     const advanced = advanceStage(session, blueprint);
-    expect(advanced.currentStageIndex).toBe(2);
+    expect(advanced.currentStageIndex).toBe(1);
+  });
+});
+
+describe("practice report safety", () => {
+  it("rejects prohibited official-score claims", async () => {
+    const { assertPracticeFeedbackSafe, practiceReportSchema } = await import(
+      "@/domain/session/transcript"
+    );
+    const report = practiceReportSchema.parse({
+      schemaVersion: 1,
+      feedbackLocale: "en",
+      overallSummary: "You have a 90% pass probability for telc.",
+      strengths: [],
+      corrections: [],
+      rubricObservations: [
+        {
+          dimension: "fluency",
+          observation: "ok",
+          band: "developing",
+          confidence: "low",
+          evidenceSegmentIds: [],
+        },
+      ],
+      nextPracticeFocus: { title: "Practice", action: "Speak more" },
+      limitations: [],
+    });
+    expect(() => assertPracticeFeedbackSafe(report)).toThrow(/prohibited/i);
+  });
+});
+
+describe("follow-up offline fallback", () => {
+  it("uses starter questions when OpenAI is unset", async () => {
+    const prev = process.env.OPENAI_API_KEY;
+    delete process.env.OPENAI_API_KEY;
+    const { generateFollowUpFromContext } = await import(
+      "@/server/ai/follow-up"
+    );
+    const { getEnv } = await import("@/shared/env");
+    getEnv(true);
+
+    const result = await generateFollowUpFromContext({
+      stageKey: "intro",
+      starterQuestions: [
+        "Wie heißen Sie und woher kommen Sie?",
+        "Welche Hobbys haben Sie?",
+      ],
+      recentCandidateText: ["Ich komme aus Berlin."],
+      trackSlug: "telc-de-b1-speaking",
+      disclaimer: "practice only",
+    });
+
+    expect(result.suggestions).toHaveLength(2);
+    expect(result.suggestions[0]?.text).toContain("Wie heißen Sie");
+    expect(result.suggestions[1]?.text).toContain("Hobbys");
+
+    if (prev !== undefined) process.env.OPENAI_API_KEY = prev;
+    getEnv(true);
   });
 });
